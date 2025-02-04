@@ -3,7 +3,78 @@ import requests
 import zipfile
 import shutil
 import subprocess
+import locale
 import winreg
+
+
+import locale
+
+def get_system_language():
+    lang, encoding = locale.getlocale()
+    if lang.startswith("Turkish") or lang.startswith("Türkçe"): lang = "tr"
+    else: lang = "en"
+    return lang
+
+
+MESSAGES = {
+    "tr": {
+        "game_not_found": "Oyun bulunamadı! Çıkış yapılıyor...",
+        "starting_game": "Oyun başlatılıyor...",
+        "game_start_failed": "Oyun başlatılamadı: {}",
+        "fetching_updates": "Güncellemeler alınıyor...",
+        "update_completed": "Güncelleme işlemi tamamlandı!",
+        "installing_git": "Git yükleniyor...",
+        "installation_completed": "Kurulum tamamlandı!",
+        "mod_already_updated": "{} zaten güncel.",
+        "downloading": "{} indiriliyor...",
+        "download_failed": "{} indirilemedi!",
+        "extracting": "{} başarıyla indirildi. Çıkarılıyor...",
+        "installed_successfully": "{} başarıyla yüklendi!",
+        "mod_install_complete": "Mod yükleme işlemi tamamlandı!",
+        "menu": """
+        =======================================
+              FurkisPack Yönetim Aracı
+        =======================================
+        1. Oyunu Başlat
+        2. FurkisPack Yükle & Güncelle
+        3. Çıkış
+        =======================================
+        """,
+        "enter_choice": "Seçiminizi girin [1-3]: ",
+        "invalid_choice": "Geçersiz seçim! Lütfen tekrar deneyin.",
+        "press_enter": "Devam etmek için enter tuşuna basın"
+    },
+    "en": {
+        "game_not_found": "Game not found! Exiting...",
+        "starting_game": "Starting game...",
+        "game_start_failed": "Failed to start the game: {}",
+        "fetching_updates": "Fetching updates...",
+        "update_completed": "Update process completed!",
+        "installing_git": "Installing Git...",
+        "installation_completed": "Installation completed!",
+        "mod_already_updated": "{} is already up-to-date.",
+        "downloading": "Downloading {}...",
+        "download_failed": "Failed to download {}!",
+        "extracting": "{} successfully downloaded. Extracting...",
+        "installed_successfully": "{} installed successfully!",
+        "mod_install_complete": "Mod installation process completed!",
+        "menu": """
+        =======================================
+              FurkisPack Management Tool
+        =======================================
+        1. Start Game
+        2. Install & Update FurkisPack
+        3. Exit
+        =======================================
+        """,
+        "enter_choice": "Enter your choice [1-3]: ",
+        "invalid_choice": "Invalid choice! Please try again.",
+        "press_enter": "Press enter to continue"
+    }
+}
+LANG = get_system_language()
+MSG = MESSAGES[LANG]
+
 
 def download_file(url, dest_path):
     response = requests.get(url, stream=True)
@@ -91,7 +162,7 @@ def install_external_mods(game_dir):
     print("Mod yükleme işlemi tamamlandı!")
 
 
-def find_game_directory(search_value = "Lethal Company"):
+def find_game_directory(is_exe_path = False, search_value = "Lethal Company"):
     reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "System\\GameConfigStore\\Children")
     for i in range(0, winreg.QueryInfoKey(reg_key)[0]):
         subkey_name = winreg.EnumKey(reg_key, i)
@@ -100,6 +171,8 @@ def find_game_directory(search_value = "Lethal Company"):
             exe_parent_dir = winreg.QueryValueEx(subkey, "ExeParentDirectory")[0]
             if "Lethal Company".lower() in exe_parent_dir.lower():
                 matched_exe_full_path = winreg.QueryValueEx(subkey, "MatchedExeFullPath")[0]
+                if is_exe_path:
+                    return matched_exe_full_path
                 return os.path.dirname(matched_exe_full_path)
         except FileNotFoundError:
             continue
@@ -149,27 +222,33 @@ def install_and_update():
     install_external_mods(game_dir=game_dir)
 
 
+def start_game():
+    game_exe_path = find_game_directory(is_exe_path=True)
+    if not game_exe_path:
+        print(MSG["game_not_found"])
+        return
+    try:
+        print(MSG["starting_game"])
+        subprocess.Popen(game_exe_path, shell=True)
+    except Exception as e:
+        print(MSG["game_start_failed"].format(e))
+
+
 
 def main():
     while True:
-        print("""
-        =======================================
-              FurkisPack Management Tool
-        =======================================
-        1. Install & Update FurkisPack
-        2. Exit
-        =======================================
-        """)
-        choice = input("Enter your choice [1-2]: ")
+        print(MSG["menu"])
+        choice = input(MSG["enter_choice"])
         
         if choice == "1":
-            install_and_update()
-
+            start_game()
         elif choice == "2":
+            install_and_update()
+        elif choice == "3":
             break
         else:
-            print("Invalid choice! Please try again.")
-        input("Press enter to continue")
+            print(MSG["invalid_choice"])
+        input(MSG["press_enter"])
         
 
 if __name__ == "__main__":
