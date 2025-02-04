@@ -45,7 +45,7 @@ def write_installed_mods(installed_mods_path, installed_mods):
 def install_external_mods(game_dir):
     mods_file = os.path.join(game_dir, "external_mods.txt")
     installed_mods_file = os.path.join(game_dir, "installed_mods.txt")
-    plugins_dir = os.path.join(game_dir, "BepInEx", "plugins")
+    plugins_dir = os.path.join(game_dir, "BepInEx", "plugins", "externals")
     
     if not os.path.exists(plugins_dir):
         os.makedirs(plugins_dir)
@@ -118,23 +118,22 @@ def install_git():
         subprocess.run(["winget", "install", "--id", "Git.Git", "-e", "--source", "winget"], shell=True)
     print("Installation completed!")
 
-def fetch_origin_and_reset_local_repo(game_dir, repo_url = "https://github.com/furkanaliunal/lethal_company_mod_pack.git"):
-    
+def fetch_origin_and_reset_local_repo(game_dir, repo_url="https://github.com/furkanaliunal/lethal_company_mod_pack.git"):
     os.chdir(game_dir)
+    
     if not os.path.exists(os.path.join(game_dir, ".git")):
         print(".git folder not found. Initializing repository...")
         subprocess.run(["git", "init"], shell=True)
         subprocess.run(["git", "remote", "add", "origin", repo_url], shell=True)
     
     print("Fetching updates...")
-    subprocess.run(["git", "fetch", "origin"], shell=True)
+    subprocess.run(["git", "fetch", "origin", "main", "no-mod", "--depth=1"], shell=True) 
     subprocess.run(["git", "reset", "--hard", "origin/main"], shell=True)
+
     
-    if os.path.exists(os.path.join(game_dir, ".gitignore")):
-        subprocess.run(["git", "clean", "-fd"], shell=True)
-    else:
-        print("Fetching failed somehow. Ask for support. Exiting...")
-        return
+    print("Cleaning up unnecessary files...")
+    
+    subprocess.run(["git", "clean", "-fd"], shell=True)
     
     print("Update process completed!")
 
