@@ -5,16 +5,17 @@ import shutil
 import subprocess
 import locale
 import winreg
-
-
 import locale
 
-def get_system_language():
-    lang, encoding = locale.getlocale()
-    if lang.startswith("Turkish") or lang.startswith("Türkçe"): lang = "tr"
-    else: lang = "en"
-    return lang
 
+
+
+# region CONFIG
+
+REPOSITORY_URL = "https://github.com/furkanaliunal/lethal_company_mod_pack.git"
+
+
+# region LOCALE
 
 MESSAGES = {
     "tr": {
@@ -86,6 +87,15 @@ MESSAGES = {
         "press_enter": "Press enter to continue"
     }
 }
+
+
+
+def get_system_language():
+    lang, encoding = locale.getlocale()
+    if lang.startswith("Turkish") or lang.startswith("Türkçe"): lang = "tr"
+    else: lang = "en"
+    return lang
+
 LANG = get_system_language()
 MSG = MESSAGES[LANG]
 
@@ -203,7 +213,7 @@ def install_git():
         subprocess.run(["winget", "install", "--id", "Git.Git", "-e", "--source", "winget"], shell=True)
     print(MSG["git_installation_complete"])
 
-def fetch_origin_and_reset_local_repo(game_dir, repo_url="https://github.com/furkanaliunal/lethal_company_mod_pack.git"):
+def fetch_origin_and_reset_local_repo(game_dir, repo_url=REPOSITORY_URL):
     os.chdir(game_dir)
     
     if not os.path.exists(os.path.join(game_dir, ".git")):
