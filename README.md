@@ -59,6 +59,13 @@ In the example above, each external line consists of three values separated by a
 
 Once a mod is downloaded, the script records the version. If a newer version is available in the repository, the script will automatically update the external plugin.
 
-[Here is an example about external plugin configuration](https://github.com/furkanaliunal/Lethal-Company-Modpack/blob/main/external_mods.txt)
 
-[Here is the default modpack created by me](https://github.com/furkanaliunal/Lethal-Company-Modpack)
+<h3 align="center">
+
+
+[🎯 Here is the default modpack created by me 🎯](https://github.com/furkanaliunal/Lethal-Company-Modpack)
+
+[📝 Here is an example about external plugin configuration 📝](https://github.com/furkanaliunal/Lethal-Company-Modpack/blob/main/external_mods.txt)
+
+
+</h3>
