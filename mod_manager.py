@@ -18,6 +18,13 @@ def get_system_language():
 
 MESSAGES = {
     "tr": {
+        "git_installation_complete": "Git yükleme işlemi tamamlandı!",
+        "git_folder_not_found": ".git klasörü bulunamadı. Depo başlatılıyor...",
+        "cleaning_files": "Gereksiz dosyalar temizleniyor...",
+        "game_directory_not_found": "Lethal Company dizini bulunamadı. Çıkılıyor...",
+        "download_progress": "İndirme ilerlemesi: {:.2f}%",
+        "download_complete": "İndirme tamamlandı!",
+        "mods_file_not_found": "external_mods.txt bulunamadı!",
         "game_not_found": "Oyun bulunamadı! Çıkış yapılıyor...",
         "starting_game": "Oyun başlatılıyor...",
         "game_start_failed": "Oyun başlatılamadı: {}",
@@ -45,6 +52,13 @@ MESSAGES = {
         "press_enter": "Devam etmek için enter tuşuna basın"
     },
     "en": {
+        "git_installation_complete": "Git installation completed!",
+        "git_folder_not_found": ".git folder not found. Initializing repository...",
+        "cleaning_files": "Cleaning up unnecessary files...",
+        "game_directory_not_found": "Failed to locate Lethal Company directory. Exiting...",
+        "download_progress": "Download progress: {:.2f}%",
+        "download_complete": "Download complete!",
+        "mods_file_not_found": "external_mods.txt not found!",
         "game_not_found": "Game not found! Exiting...",
         "starting_game": "Starting game...",
         "game_start_failed": "Failed to start the game: {}",
@@ -89,8 +103,8 @@ def download_file(url, dest_path):
                     downloaded_size += len(chunk)
                     if total_size > 0:
                         percent_complete = (downloaded_size / total_size) * 100
-                        print(f"\rİndirme ilerlemesi: {percent_complete:.2f}%", end="", flush=True)
-        print("\nİndirme tamamlandı!")
+                        print(f"\r{MSG['download_progress'].format(percent_complete):.2f}%", end="", flush=True)
+        print(f"\n{MSG['download_complete']}")
         return True
     return False
 
@@ -122,7 +136,7 @@ def install_external_mods(game_dir):
         os.makedirs(plugins_dir)
     
     if not os.path.exists(mods_file):
-        print("external_mods.txt bulunamadı!")
+        print(MSG["mods_file_not_found"])
         return
     
     installed_mods = read_installed_mods(installed_mods_file)
@@ -131,21 +145,19 @@ def install_external_mods(game_dir):
         for line in f:
             parts = line.strip().split(";")
             if len(parts) != 3:
-                
-                print(parts)
                 continue
             
             mod_name, version, url = parts
             mod_path = os.path.join(plugins_dir, mod_name)
             
             if mod_name in installed_mods and installed_mods[mod_name] == version:
-                print(f"{mod_name} zaten güncel.")
+                print(MSG["mod_already_updated"].format(mod_name))
                 continue
             
-            print(f"{mod_name} indiriliyor...")
+            print(MSG["downloading"].format(mod_name))
             zip_path = os.path.join(game_dir, f"{mod_name}.zip")
             if download_file(url, zip_path):
-                print(f"{mod_name} başarıyla indirildi. Çıkarılıyor...")
+                print(MSG["extracting"].format(mod_name))
                 
                 if os.path.exists(mod_path):
                     shutil.rmtree(mod_path)
@@ -154,12 +166,12 @@ def install_external_mods(game_dir):
                 extract_zip(zip_path, mod_path)
                 os.remove(zip_path)
                 installed_mods[mod_name] = version
-                print(f"{mod_name} başarıyla yüklendi!")
+                print(MSG["installed_successfully"].format(mod_name))
             else:
-                print(f"{mod_name} indirilemedi!")
+                print(MSG["download_failed"].format(mod_name))
     
     write_installed_mods(installed_mods_file, installed_mods)
-    print("Mod yükleme işlemi tamamlandı!")
+    print(MSG["mod_install_complete"])
 
 
 def find_game_directory(is_exe_path = False, search_value = "Lethal Company"):
@@ -187,35 +199,35 @@ def check_git():
 
 def install_git():
     if not check_git():
-        print("Installing Git...")
+        print(MSG["installing_git"])
         subprocess.run(["winget", "install", "--id", "Git.Git", "-e", "--source", "winget"], shell=True)
-    print("Installation completed!")
+    print(MSG["git_installation_complete"])
 
 def fetch_origin_and_reset_local_repo(game_dir, repo_url="https://github.com/furkanaliunal/lethal_company_mod_pack.git"):
     os.chdir(game_dir)
     
     if not os.path.exists(os.path.join(game_dir, ".git")):
-        print(".git folder not found. Initializing repository...")
+        print(MSG["git_folder_not_found"])
         subprocess.run(["git", "init"], shell=True)
         subprocess.run(["git", "remote", "add", "origin", repo_url], shell=True)
     
-    print("Fetching updates...")
+    print(MSG["fetching_updates"])
     subprocess.run(["git", "fetch", "origin", "main", "no-mod", "--depth=1"], shell=True) 
     subprocess.run(["git", "reset", "--hard", "origin/main"], shell=True)
 
     
-    print("Cleaning up unnecessary files...")
+    print(MSG["cleaning_files"])
     
     subprocess.run(["git", "clean", "-fd"], shell=True)
     
-    print("Update process completed!")
+    print(MSG["update_completed"])
 
 
 
 def install_and_update():
     game_dir = find_game_directory()
     if not game_dir:
-        print("Failed to locate Lethal Company directory. Exiting...")
+        print(MSG["game_directory_not_found"])
         return
     install_git()
     fetch_origin_and_reset_local_repo(game_dir=game_dir)
