@@ -113,7 +113,7 @@ def download_file(url, dest_path):
                     downloaded_size += len(chunk)
                     if total_size > 0:
                         percent_complete = (downloaded_size / total_size) * 100
-                        print(f"\r{MSG['download_progress'].format(percent_complete):.2f}%", end="", flush=True)
+                        print(f"\r{MSG['download_progress'].format(percent_complete)}", end="", flush=True)
         print(f"\n{MSG['download_complete']}")
         return True
     return False
