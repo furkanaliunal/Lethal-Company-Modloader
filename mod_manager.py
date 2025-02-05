@@ -291,6 +291,32 @@ def fetch_origin_and_reset_local_repo(game_dir, repo_url=REPOSITORY_URL):
     
     print(MSG["update_completed"])
 
+def get_remote_commit_hash(game_dir):
+    os.chdir(game_dir)
+    result = subprocess.run(["git", "ls-remote", "origin", "main"], capture_output=True, text=True)
+    if result.returncode == 0:
+        return result.stdout.split()[0]
+    return None
+
+def get_local_commit_hash(game_dir):
+    os.chdir(game_dir)
+    result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return None
+
+def check_for_updates(game_dir):
+    local_commit = get_local_commit_hash(game_dir)
+    remote_commit = get_remote_commit_hash(game_dir)
+    
+    if local_commit is None or remote_commit is None:
+        return
+    
+    if local_commit != remote_commit:
+        return True
+    else:
+        return False
+
 
 
 def install_and_update():
