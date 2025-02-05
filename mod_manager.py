@@ -11,7 +11,10 @@ import locale
 
 # region CONFIG
 
-REPOSITORY_URL = "https://github.com/furkanaliunal/lethal_company_mod_pack.git"
+MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
+MODPACK_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal_company_mod_pack.git"
+CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.2/Lethal.Mod.Manager.exe"
+UPDATE_CHECK_URL = "https://api.github.com/repos/furkanaliunal/Lethal-Company-Modloader/releases/latest"
 STEAM_APP_ID = "1966720"
 
 
@@ -272,7 +275,7 @@ def install_git():
         subprocess.run(["winget", "install", "--id", "Git.Git", "-e", "--source", "winget"], shell=True)
     print(MSG["git_installation_complete"])
 
-def fetch_origin_and_reset_local_repo(game_dir, repo_url=REPOSITORY_URL):
+def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL):
     os.chdir(game_dir)
     
     if not os.path.exists(os.path.join(game_dir, ".git")):
@@ -291,15 +294,17 @@ def fetch_origin_and_reset_local_repo(game_dir, repo_url=REPOSITORY_URL):
     
     print(MSG["update_completed"])
 
-def get_remote_commit_hash(game_dir):
-    os.chdir(game_dir)
+def get_remote_commit_hash(game_dir = None):
+    if game_dir is not None:
+        os.chdir(game_dir)
     result = subprocess.run(["git", "ls-remote", "origin", "main"], capture_output=True, text=True)
     if result.returncode == 0:
         return result.stdout.split()[0]
     return None
 
-def get_local_commit_hash(game_dir):
-    os.chdir(game_dir)
+def get_local_commit_hash(game_dir = None):
+    if game_dir is not None:
+        os.chdir(game_dir)
     result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
     if result.returncode == 0:
         return result.stdout.strip()
@@ -316,6 +321,18 @@ def check_for_updates(game_dir):
         return True
     else:
         return False
+    
+def check_for_modloader_updates():
+    response = requests.get(UPDATE_CHECK_URL)
+    if response.status_code == 200:
+        release = response.json()
+        asset_url = release['assets'][0]['browser_download_url']
+        download_url = asset_url
+        if download_url != CURRENT_VERSION_URL:
+            return True, download_url
+        return False, CURRENT_VERSION_URL
+    else:
+        return False, CURRENT_VERSION_URL
 
 
 
