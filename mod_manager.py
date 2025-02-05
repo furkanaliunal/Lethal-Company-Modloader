@@ -217,6 +217,30 @@ def install_external_mods(game_dir):
     write_installed_mods(installed_mods_file, installed_mods)
     print(MSG["mod_install_complete"])
 
+def clean_external_mods(game_dir):
+    externals_dir = os.path.join(game_dir, "BepInEx", "plugins", "externals")
+    external_mods_file = os.path.join(game_dir, "external_mods.txt")
+    installed_mods_file = os.path.join(game_dir, "installed_mods.txt")
+    installed_mods = read_installed_mods(installed_mods_file)
+
+    if os.path.exists(external_mods_file):
+        with open(external_mods_file, "r", encoding="utf-8") as f:
+            allowed_mods = {line.split(";")[0].strip() for line in f if line.strip()}
+    else:
+        allowed_mods = set()
+
+
+    installed_mods_to_remove = {mod for mod in installed_mods if mod not in allowed_mods}
+    folders_to_remove = {folder for folder in os.listdir(externals_dir) if folder not in allowed_mods}
+
+
+    for folder in folders_to_remove:
+        shutil.rmtree(os.path.join(externals_dir, folder))
+    for mod_to_remove in installed_mods_to_remove:
+        installed_mods.pop(mod_to_remove)
+
+    write_installed_mods(installed_mods_path=installed_mods_file, installed_mods=installed_mods)
+
 
 def find_game_directory(is_exe_path = False, search_value = "Lethal Company"):
     reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "System\\GameConfigStore\\Children")
@@ -275,6 +299,7 @@ def install_and_update():
         return
     install_git()
     fetch_origin_and_reset_local_repo(game_dir=game_dir)
+    clean_external_mods(game_dir=game_dir)
     install_external_mods(game_dir=game_dir)
 
 
