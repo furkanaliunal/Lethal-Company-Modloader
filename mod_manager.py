@@ -161,7 +161,7 @@ def read_installed_mods(installed_mods_path):
     if os.path.exists(installed_mods_path):
         with open(installed_mods_path, "r") as f:
             for line in f:
-                parts = line.strip().split("=")
+                parts = line.strip().split(";")
                 if len(parts) == 2:
                     installed_mods[parts[0]] = parts[1]
     return installed_mods
@@ -169,7 +169,7 @@ def read_installed_mods(installed_mods_path):
 def write_installed_mods(installed_mods_path, installed_mods):
     with open(installed_mods_path, "w") as f:
         for mod_name, version in installed_mods.items():
-            f.write(f"{mod_name}={version}\n")
+            f.write(f"{mod_name};{version}\n")
 
 def install_external_mods(game_dir):
     mods_file = os.path.join(game_dir, "external_mods.txt")
