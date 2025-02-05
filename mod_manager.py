@@ -3,7 +3,6 @@ import requests
 import zipfile
 import shutil
 import subprocess
-import locale
 import winreg
 import locale
 
@@ -85,6 +84,40 @@ MESSAGES = {
         "enter_choice": "Enter your choice [1-3]: ",
         "invalid_choice": "Invalid choice! Please try again.",
         "press_enter": "Press enter to continue"
+    },
+    "nl": {
+        "git_installation_complete": "Git-installatie voltooid!",
+        "git_folder_not_found": ".git-map niet gevonden. Repository initialiseren...",
+        "cleaning_files": "Onnodige bestanden opruimen...",
+        "game_directory_not_found": "Lethal Company-map niet gevonden. Afsluiten...",
+        "download_progress": "Downloadvoortgang: {:.2f}%",
+        "download_complete": "Download voltooid!",
+        "mods_file_not_found": "external_mods.txt niet gevonden!",
+        "game_not_found": "Spel niet gevonden! Afsluiten...",
+        "starting_game": "Spel starten...",
+        "game_start_failed": "Kan het spel niet starten: {}",
+        "fetching_updates": "Updates ophalen...",
+        "update_completed": "Updateproces voltooid!",
+        "installing_git": "Git installeren...",
+        "installation_completed": "Installatie voltooid!",
+        "mod_already_updated": "{} is al up-to-date.",
+        "downloading": "{} wordt gedownload...",
+        "download_failed": "Downloaden van {} mislukt!",
+        "extracting": "{} succesvol gedownload. Uitpakken...",
+        "installed_successfully": "{} succesvol geïnstalleerd!",
+        "mod_install_complete": "Mod-installatieproces voltooid!",
+        "menu": """
+        =======================================
+            FurkisPack Beheerhulpmiddel
+        =======================================
+        1. Spel starten
+        2. FurkisPack installeren & bijwerken
+        3. Afsluiten
+        =======================================
+        """,
+        "enter_choice": "Voer uw keuze in [1-3]: ",
+        "invalid_choice": "Ongeldige keuze! Probeer het opnieuw.",
+        "press_enter": "Druk op enter om door te gaan"
     }
 }
 
@@ -92,7 +125,8 @@ MESSAGES = {
 
 def get_system_language():
     lang, encoding = locale.getlocale()
-    if lang.startswith("Turkish") or lang.startswith("Türkçe"): lang = "tr"
+    if lang.startswith("Turkish"): lang = "tr"
+    elif lang.startswith("Dutch"): lang = "nl"
     else: lang = "en"
     return lang
 
