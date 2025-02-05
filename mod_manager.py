@@ -12,6 +12,7 @@ import locale
 # region CONFIG
 
 REPOSITORY_URL = "https://github.com/furkanaliunal/lethal_company_mod_pack.git"
+STEAM_APP_ID = "1966720"
 
 
 # region LOCALE
@@ -310,7 +311,7 @@ def start_game():
         return
     try:
         print(MSG["starting_game"])
-        subprocess.Popen(game_exe_path, shell=True)
+        subprocess.Popen(["start", f"steam://run/{STEAM_APP_ID}"], shell=True)
     except Exception as e:
         print(MSG["game_start_failed"].format(e))
 
