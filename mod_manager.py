@@ -217,11 +217,12 @@ class App(tk.Tk):
     def init_variables(self):
 
         self.game_path = self.find_game_directory()
-        self.game_exe_path = self.find_game_directory(is_exe_path=True)
-        self.external_mods_file = os.path.join(self.game_path, "external_mods.txt")
-        self.external_mods_path = os.path.join(self.game_path, "BepInEx", "plugins", "externals")
-        self.installed_mods_file = os.path.join(self.game_path, "installed_mods.txt")
-        self.installed_mods = self.read_installed_mods()
+        if self.game_path is not None:
+            self.game_exe_path = self.find_game_directory(is_exe_path=True)
+            self.external_mods_file = os.path.join(self.game_path, "external_mods.txt")
+            self.external_mods_path = os.path.join(self.game_path, "BepInEx", "plugins", "externals")
+            self.installed_mods_file = os.path.join(self.game_path, "installed_mods.txt")
+            self.installed_mods = self.read_installed_mods()
         pass
 
 
