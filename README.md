@@ -23,7 +23,7 @@ This repository provides significant benefits by offering a centralized system f
 
 ## 🎮 **How To Use**
 
-Just download the runnable file (.exe) and double click on it to run. Once the CLI menu is open, continue with selecting install opinion. Once installation is done, you are ready to play the game! 
+Just download the runnable file (.exe) and double click on it to run. Once the application is started, continue with pressing *update* option. Once installation is done, you are ready to play the game! 
 
 
 ## 🪄 **Required Tools To Develop**
