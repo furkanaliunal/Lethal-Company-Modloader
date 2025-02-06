@@ -19,7 +19,7 @@ import sys
 
 MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
 MODPACK_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal_company_mod_pack.git"
-CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.2/Lethal.Mod.Manager.exe"
+CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.3/Lethal.Mod.Manager.exe"
 UPDATE_CHECK_URL = "https://api.github.com/repos/furkanaliunal/Lethal-Company-Modloader/releases/latest"
 STEAM_APP_ID = "1966720"
 
