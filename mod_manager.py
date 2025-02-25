@@ -176,6 +176,14 @@ def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL)
     subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
     APP.write_to_text_area(MSG["git_update_completed"])
 
+def get_git_branch():
+    try:
+        branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], 
+                                         stderr=subprocess.DEVNULL).decode().strip()
+        return branch
+    except Exception:
+        return None
+
 def extract_zip(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
@@ -223,6 +231,9 @@ class App(tk.Tk):
             self.external_mods_file = os.path.join(self.game_path, "external_mods.txt")
             self.installed_mods_file = os.path.join(self.game_path, "installed_mods.txt")
             self.installed_mods = self.read_installed_mods()
+            self.current_branch = get_git_branch()
+            self.toggle_state = self.current_branch != "nomod"
+            print("Current State: ", self.toggle_state, self.current_branch)
 
     def build_gui(self):
         self.title(MSG["app_title"])
@@ -276,25 +287,27 @@ class App(tk.Tk):
         self.game_dir_button = tk.Button(self, text="Dizin", command=self.open_game_folder, image=self.game_dir_button_photo, borderwidth=2, highlightthickness=0, background="black")
         self.game_dir_button.place(x=490, y=350)
 
-
-        self.toggle_state = False
+        # if not self.toggle_state:
+        #    self.toggle_state = False
         self.open_image = Image.open(get_resource_path("src/toggle_button_on.png"))
         self.closed_image = Image.open(get_resource_path("src/toggle_button_off.png"))
         self.open_image = self.open_image.resize((45, 25))
         self.closed_image = self.closed_image.resize((45, 25))
         self.open_photo = ImageTk.PhotoImage(self.open_image)
         self.closed_photo = ImageTk.PhotoImage(self.closed_image)
-        self.toggle_button = tk.Button(self, image=self.closed_photo, command=self.toggle_button_action, borderwidth=2, highlightthickness=0, background="black", text="Some text")
+        self.toggle_button = tk.Button(self, image=self.closed_photo, command=self.toggle_button_action, borderwidth=2, highlightthickness=0, background="black")
         self.toggle_button.place(x=540, y=7)
+        if self.toggle_state: self.toggle_button.config(image=self.open_photo)
+        else: self.toggle_button.config(image=self.closed_photo)
 
     def toggle_button_action(self):
         self.toggle_state = not self.toggle_state
         if self.toggle_state:
             self.toggle_button.config(image=self.open_photo)
-            APP.write_to_text_area("Mod paketi aktif edildi", "green")
+            self.write_to_text_area("Mod paketi aktif edildi", "green")
         else:
             self.toggle_button.config(image=self.closed_photo)
-            APP.write_to_text_area("Mod paketi iptal edildi", "red")
+            self.write_to_text_area("Mod paketi iptal edildi", "red")
 
     def open_game_folder(self):
         if self.game_path is not None:
