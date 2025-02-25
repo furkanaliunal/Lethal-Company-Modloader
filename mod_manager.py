@@ -165,18 +165,14 @@ def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL)
     
     if not os.path.exists(os.path.join(game_dir, ".git")):
         APP.write_to_text_area(MSG["git_folder_not_found"])
-        subprocess.run(["git", "init"], shell=True, creationflags=CREATION_FLAGS)
-        subprocess.run(["git", "remote", "add", "origin", repo_url], shell=True, creationflags=CREATION_FLAGS)
-    
-    APP.write_to_text_area(MSG["git_fetching_updates"])
-    subprocess.run(["git", "fetch", "origin", "main", "no-mod", "--depth=1"], shell=True, creationflags=CREATION_FLAGS) 
-    subprocess.run(["git", "reset", "--hard", "origin/main"], shell=True, creationflags=CREATION_FLAGS)
+        subprocess.run(["git", "clone", repo_url, "."], shell=False, creationflags=CREATION_FLAGS)
+    else:
+        APP.write_to_text_area(MSG["git_fetching_updates"])
+        subprocess.run(["git", "fetch", "origin"], shell=False, creationflags=CREATION_FLAGS)
+        subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
 
-    
     APP.write_to_text_area(MSG["git_cleaning_files"])
-    
-    subprocess.run(["git", "clean", "-fd"], shell=True, creationflags=CREATION_FLAGS)
-    
+    subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
     APP.write_to_text_area(MSG["git_update_completed"])
 
 def extract_zip(zip_path, extract_to):
