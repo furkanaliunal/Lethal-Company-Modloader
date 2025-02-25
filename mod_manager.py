@@ -6,20 +6,22 @@ import subprocess
 import winreg
 import locale
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, messagebox
 from PIL import Image, ImageTk
 import threading
 import time
 import sys
 import configparser
+import git
 
 
 
 
 # region CONFIG
 
-MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
 MODPACK_REPOSITORY_URL = "https://github.com/furkanaliunal/Lethal-Company-Modpack.git"
+
+MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
 CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.3/Lethal.Mod.Manager.exe"
 UPDATE_CHECK_URL = "https://api.github.com/repos/furkanaliunal/Lethal-Company-Modloader/releases/latest"
 STEAM_APP_ID = "1966720"
@@ -33,7 +35,7 @@ MESSAGES = {
         "app_button_start" : "Oyunu Başlat",
         "app_selection_copied" : "Seçilen Satır Kopyalandı!",
         "git_install" : "Git kurulumu yapılıyor",
-        "git_folder_not_found" : "Git bulunamadı",
+        "git_folder_not_found" : "Çekirdek bulunamadı",
         "git_installation_complete" : "Git kurulumu tamamlandı",
         "git_fetching_updates" : "Çekirdek kuruluyor",
         "git_cleaning_files" : "Oyun dosyaları temizleniyor",
@@ -61,6 +63,13 @@ MESSAGES = {
         "modpack_update_download": "Güncelle tuşuna basarak güncellemeni alabilirsin",
         "modpack_uptodate": "Mod Paketi Güncel",
         "updates_checking": "Güncellemeler kontrol ediliyor..",
+        "mod_start_install" : "Güncelle tuşuna basarak kurulumu yapın",
+        "mod_pack_activated" : "Mod paketi aktif edildi",
+        "mod_pack_deactivated" : "Mod paketi iptal edildi",
+        "settings" : "Ayarlar",
+        "save" : "Kaydet",
+        "cancel" : "Vazgeç",
+
     },
     "en": {
         "app_title" : "Furkis Mod Loader",
@@ -96,6 +105,13 @@ MESSAGES = {
         "modpack_update_download": "Press the update button to install the latest version",
         "modpack_uptodate": "Mod Pack is up to date",
         "updates_checking": "Checking for updates..",
+        "mod_start_install" : "Press the update button to start installation",
+        "mod_pack_activated" : "Mod pack activated",
+        "mod_pack_deactivated" : "Mod pack deactivated",
+        "settings" : "Settings",
+        "save" : "Save",
+        "cancel" : "Cancel",
+
     },
     "nl": {
         "app_title" : "Furkis Mod Loader",
@@ -131,6 +147,13 @@ MESSAGES = {
         "modpack_update_download": "Druk op de updateknop om de nieuwste versie te installeren",
         "modpack_uptodate": "Mod Pack is up-to-date",
         "updates_checking": "Controleren op updates..",
+        "mod_start_install" : "Druk op de updateknop om de installatie te starten",
+        "mod_pack_activated" : "Modpakket geactiveerd",
+        "mod_pack_deactivated" : "Modpakket gedeactiveerd",
+        "settings" : "Instellingen",
+        "save" : "Opslaan",
+        "cancel" : "Annuleren",
+
     }
 }
 
@@ -147,42 +170,51 @@ def get_system_language():
     return lang
 
 
-
 def check_git():
     try:
         subprocess.run(["git", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, creationflags=CREATION_FLAGS)
         return True
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+    
 
 def install_git():
-    if not check_git():
-        APP.write_to_text_area(MSG["git_install"])
-        subprocess.run(["winget", "install", "--id", "Git.Git", "-e", "--source", "winget"], shell=True, creationflags=CREATION_FLAGS)
-    APP.write_to_text_area(MSG["git_installation_complete"])
+    process = subprocess.Popen(
+        'cmd.exe /c start /wait cmd.exe /c "winget install --id Git.Git -e --source winget"',
+        shell=False
+    )
+    process.wait()
+
 
 def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL):
-    os.chdir(game_dir)
-    
     if not os.path.exists(os.path.join(game_dir, ".git")):
         APP.write_to_text_area(MSG["git_folder_not_found"])
-        subprocess.run(["git", "clone", repo_url, "."], shell=False, creationflags=CREATION_FLAGS)
+        temp_dir = os.path.join(game_dir, "temp")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+        repo = git.Repo.clone_from(repo_url, temp_dir)
+        for item in os.listdir(temp_dir):
+            s = os.path.join(temp_dir, item)
+            d = os.path.join(game_dir, item)
+            if os.path.isdir(s):
+                shutil.move(s, d)
+            else:
+                shutil.move(s, d)
+        shutil.rmtree(temp_dir)
+        APP.init_variables()
     else:
         APP.write_to_text_area(MSG["git_fetching_updates"])
-        subprocess.run(["git", "fetch", "origin"], shell=False, creationflags=CREATION_FLAGS)
-        subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
-
+        repo = git.Repo(game_dir)
+        origin = repo.remotes.origin
+        origin.fetch()
+        repo.head.reset('origin/main', index=True, working_tree=True)
     APP.write_to_text_area(MSG["git_cleaning_files"])
-    subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
+    repo.git.clean('-fd')
     APP.write_to_text_area(MSG["git_update_completed"])
 
-def get_git_branch():
-    try:
-        branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], 
-                                         stderr=subprocess.DEVNULL).decode().strip()
-        return branch
-    except Exception:
-        return None
+def get_git_branch(game_dir):
+    repo = git.Repo(game_dir)
+    return repo.active_branch.name
 
 def extract_zip(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -213,30 +245,34 @@ CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.title(MSG["app_title"])
 
         self.init_variables()
         self.build_gui()
 
-        threading.Thread(target=self.check_updates).start()
-
     def init_variables(self):
-        self.game_path = self.find_game_directory()
+        self.game_path, self.game_exe_path = self.find_game_directory(with_exe_path=True)
         if self.game_path is not None:
-            self.game_exe_path = self.find_game_directory(is_exe_path=True)
+            self.is_git_installed = check_git()
+            self.is_repository_installed = os.path.exists(os.path.join(self.game_path, ".git"))
             self.config_path = os.path.join(self.game_path, "BepInEx", "config")
             self.external_mods_path = os.path.join(self.game_path, "BepInEx", "plugins", "externals")
             os.makedirs(self.config_path, exist_ok=True)
             os.makedirs(self.external_mods_path, exist_ok=True)
-            self.config_files = [f for f in os.listdir(self.config_path) if f.endswith(".cfg")]
-            self.external_mods_file = os.path.join(self.game_path, "external_mods.txt")
-            self.installed_mods_file = os.path.join(self.game_path, "installed_mods.txt")
-            self.installed_mods = self.read_installed_mods()
-            self.current_branch = get_git_branch()
-            self.toggle_state = self.current_branch != "nomod"
-            print("Current State: ", self.toggle_state, self.current_branch)
+            if self.is_git_installed and self.is_repository_installed:
+                self.config_files = [f for f in os.listdir(self.config_path) if f.endswith(".cfg")]
+                self.external_mods_file = os.path.join(self.game_path, "external_mods.txt")
+                self.installed_mods_file = os.path.join(self.game_path, "installed_mods.txt")
+                self.installed_mods = self.read_installed_mods()
+                self.current_branch = get_git_branch(self.game_path)
+                self.toggle_state = self.current_branch != "nomod"
+                threading.Thread(target=self.check_updates).start()
+            else:
+                self.toggle_state = False
+        
+
 
     def build_gui(self):
-        self.title(MSG["app_title"])
         self.geometry("600x400")
         self.resizable(False, False)
         self.iconbitmap(get_resource_path("logo.ico"))
@@ -287,8 +323,6 @@ class App(tk.Tk):
         self.game_dir_button = tk.Button(self, text="Dizin", command=self.open_game_folder, image=self.game_dir_button_photo, borderwidth=2, highlightthickness=0, background="black")
         self.game_dir_button.place(x=490, y=350)
 
-        # if not self.toggle_state:
-        #    self.toggle_state = False
         self.open_image = Image.open(get_resource_path("src/toggle_button_on.png"))
         self.closed_image = Image.open(get_resource_path("src/toggle_button_off.png"))
         self.open_image = self.open_image.resize((45, 25))
@@ -297,17 +331,31 @@ class App(tk.Tk):
         self.closed_photo = ImageTk.PhotoImage(self.closed_image)
         self.toggle_button = tk.Button(self, image=self.closed_photo, command=self.toggle_button_action, borderwidth=2, highlightthickness=0, background="black")
         self.toggle_button.place(x=540, y=7)
-        if self.toggle_state: self.toggle_button.config(image=self.open_photo)
-        else: self.toggle_button.config(image=self.closed_photo)
+        if self.toggle_state: 
+            self.toggle_button.config(image=self.open_photo)
+        else: 
+            self.toggle_button.config(image=self.closed_photo)
+
+
+        if self.game_path is None:
+            self.write_to_text_area(MSG["game_directory_path_not_found"], "red")
+
+        if not self.is_git_installed:
+            self.write_to_text_area(MSG["mod_start_install"])
 
     def toggle_button_action(self):
+        repo = git.Repo(self.game_path)
         self.toggle_state = not self.toggle_state
+        self.toggle_button.config(state="disabled")
         if self.toggle_state:
             self.toggle_button.config(image=self.open_photo)
-            self.write_to_text_area("Mod paketi aktif edildi", "green")
+            self.write_to_text_area(MSG["mod_pack_activated"], "green")
+            repo.git.checkout("main")
         else:
             self.toggle_button.config(image=self.closed_photo)
-            self.write_to_text_area("Mod paketi iptal edildi", "red")
+            self.write_to_text_area(MSG["mod_pack_deactivated"], "red")
+            repo.git.checkout("nomod")
+        self.toggle_button.config(state="active")
 
     def open_game_folder(self):
         if self.game_path is not None:
@@ -315,7 +363,7 @@ class App(tk.Tk):
 
     def open_settings(self):
         settings_window = tk.Toplevel(self)
-        settings_window.title("Ayarlar")
+        settings_window.title(MSG["settings"])
         settings_window.geometry("600x400")
         
         list_frame = tk.Frame(settings_window)
@@ -378,10 +426,10 @@ class App(tk.Tk):
         button_frame = tk.Frame(self.config_frame)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
         
-        save_button = tk.Button(button_frame, text="Kaydet", command=lambda: self.save_config(file_path, scrollable_frame))
+        save_button = tk.Button(button_frame, text=MSG["save"], command=lambda: self.save_config(file_path, scrollable_frame))
         save_button.pack(side=tk.RIGHT, padx=5)
         
-        cancel_button = tk.Button(button_frame, text="Vazgeç", command=settings_window.destroy)
+        cancel_button = tk.Button(button_frame, text=MSG["cancel"], command=settings_window.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
         
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -401,8 +449,6 @@ class App(tk.Tk):
         
         with open(file_path, 'w') as configfile:
             parser.write(configfile)
-
-        print(f"{file_path} başarıyla kaydedildi!")
 
 
     def copy_selected_text(self, event):
@@ -473,16 +519,19 @@ class App(tk.Tk):
         if not self.game_path:
             self.write_to_text_area(MSG["game_directory_path_not_found"], "red")
             return
-        install_git()
+        if not self.is_git_installed:
+            self.write_to_text_area(MSG["git_install"])
+            install_git()
+            self.write_to_text_area(MSG["git_installation_complete"])
+            self.init_variables()
         fetch_origin_and_reset_local_repo(self.game_path)
         self.clean_external_mods()
 
-        thread = threading.Thread(target=self.install_external_mods(), daemon=True)
-        thread.start()
+        thread = threading.Thread(target=self.install_external_mods, daemon=True).start()
 
 
 
-    def find_game_directory(self, is_exe_path = False, search_value = "Lethal Company"):
+    def find_game_directory(self, with_exe_path = False, search_value = "Lethal Company"):
         reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "System\\GameConfigStore\\Children")
         for i in range(0, winreg.QueryInfoKey(reg_key)[0]):
             subkey_name = winreg.EnumKey(reg_key, i)
@@ -491,8 +540,8 @@ class App(tk.Tk):
                 exe_parent_dir = winreg.QueryValueEx(subkey, "ExeParentDirectory")[0]
                 if "Lethal Company".lower() in exe_parent_dir.lower():
                     matched_exe_full_path = winreg.QueryValueEx(subkey, "MatchedExeFullPath")[0]
-                    if is_exe_path:
-                        return matched_exe_full_path
+                    if with_exe_path:
+                        return os.path.dirname(matched_exe_full_path), matched_exe_full_path
                     return os.path.dirname(matched_exe_full_path)
             except FileNotFoundError:
                 continue
