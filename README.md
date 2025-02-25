@@ -28,7 +28,7 @@ Just download the runnable file (.exe) and double click on it to run. Once the a
 <br>
 <div align="center">
 
-![Interface](app.png)
+![Interface](src/app.png)
 
 </div>
 <br>

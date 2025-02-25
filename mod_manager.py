@@ -232,7 +232,7 @@ class App(tk.Tk):
         
         self.attributes('-alpha', 0.95)
 
-        self.bg_image = Image.open(get_resource_path("background.png"))
+        self.bg_image = Image.open(get_resource_path("src/background.png"))
         self.bg_image = self.bg_image.resize((600, 400))
         self.bg_photo = ImageTk.PhotoImage(self.bg_image)
 
@@ -264,13 +264,13 @@ class App(tk.Tk):
         self.start_button = tk.Button(self, text=MSG["app_button_start"], command=self.start_action, height=2, width=12)
         self.start_button.place(x=320, y=350)
 
-        self.settings_button_image = Image.open(get_resource_path("settings.png"))
+        self.settings_button_image = Image.open(get_resource_path("src/settings.png"))
         self.settings_button_image = self.settings_button_image.resize((40, 40))
         self.settings_button_photo = ImageTk.PhotoImage(self.settings_button_image)
         self.settings_button = tk.Button(self, text="Ayarlar", command=self.open_settings, image=self.settings_button_photo, borderwidth=2, highlightthickness=0, background="black")
         self.settings_button.place(x=550, y=350)
 
-        self.game_dir_button_image = Image.open(get_resource_path("directory.png"))
+        self.game_dir_button_image = Image.open(get_resource_path("src/directory.png"))
         self.game_dir_button_image = self.game_dir_button_image.resize((40, 40))
         self.game_dir_button_photo = ImageTk.PhotoImage(self.game_dir_button_image)
         self.game_dir_button = tk.Button(self, text="Dizin", command=self.open_game_folder, image=self.game_dir_button_photo, borderwidth=2, highlightthickness=0, background="black")
@@ -278,8 +278,8 @@ class App(tk.Tk):
 
 
         self.toggle_state = False
-        self.open_image = Image.open(get_resource_path("toggle_button_on.png"))
-        self.closed_image = Image.open(get_resource_path("toggle_button_off.png"))
+        self.open_image = Image.open(get_resource_path("src/toggle_button_on.png"))
+        self.closed_image = Image.open(get_resource_path("src/toggle_button_off.png"))
         self.open_image = self.open_image.resize((45, 25))
         self.closed_image = self.closed_image.resize((45, 25))
         self.open_photo = ImageTk.PhotoImage(self.open_image)
