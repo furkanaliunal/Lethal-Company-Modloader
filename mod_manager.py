@@ -11,6 +11,7 @@ from PIL import Image, ImageTk
 import threading
 import time
 import sys
+import configparser
 
 
 
@@ -262,6 +263,134 @@ class App(tk.Tk):
 
         self.start_button = tk.Button(self, text=MSG["app_button_start"], command=self.start_action, height=2, width=12)
         self.start_button.place(x=320, y=350)
+
+        self.settings_button_image = Image.open(get_resource_path("settings.png"))
+        self.settings_button_image = self.settings_button_image.resize((40, 40))
+        self.settings_button_photo = ImageTk.PhotoImage(self.settings_button_image)
+        self.settings_button = tk.Button(self, text="Ayarlar", command=self.open_settings, image=self.settings_button_photo, borderwidth=2, highlightthickness=0, background="black")
+        self.settings_button.place(x=550, y=350)
+
+        self.game_dir_button_image = Image.open(get_resource_path("directory.png"))
+        self.game_dir_button_image = self.game_dir_button_image.resize((40, 40))
+        self.game_dir_button_photo = ImageTk.PhotoImage(self.game_dir_button_image)
+        self.game_dir_button = tk.Button(self, text="Dizin", command=self.open_game_folder, image=self.game_dir_button_photo, borderwidth=2, highlightthickness=0, background="black")
+        self.game_dir_button.place(x=490, y=350)
+
+
+        self.toggle_state = False
+        self.open_image = Image.open(get_resource_path("toggle_button_on.png"))
+        self.closed_image = Image.open(get_resource_path("toggle_button_off.png"))
+        self.open_image = self.open_image.resize((45, 25))
+        self.closed_image = self.closed_image.resize((45, 25))
+        self.open_photo = ImageTk.PhotoImage(self.open_image)
+        self.closed_photo = ImageTk.PhotoImage(self.closed_image)
+        self.toggle_button = tk.Button(self, image=self.closed_photo, command=self.toggle_button_action, borderwidth=2, highlightthickness=0, background="black", text="Some text")
+        self.toggle_button.place(x=540, y=7)
+
+    def toggle_button_action(self):
+        self.toggle_state = not self.toggle_state
+        if self.toggle_state:
+            self.toggle_button.config(image=self.open_photo)
+            APP.write_to_text_area("Mod paketi aktif edildi", "green")
+        else:
+            self.toggle_button.config(image=self.closed_photo)
+            APP.write_to_text_area("Mod paketi iptal edildi", "red")
+
+    def open_game_folder(self):
+        if self.game_path is not None:
+            os.startfile(self.game_path)
+
+    def open_settings(self):
+        settings_window = tk.Toplevel(self)
+        settings_window.title("Ayarlar")
+        settings_window.geometry("600x400")
+        
+        list_frame = tk.Frame(settings_window)
+        list_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
+
+        list_scroll = tk.Scrollbar(list_frame, orient=tk.VERTICAL)
+        file_listbox = tk.Listbox(list_frame, height=20, yscrollcommand=list_scroll.set)
+        list_scroll.config(command=file_listbox.yview)
+
+        file_listbox.pack(side=tk.LEFT, fill=tk.Y)
+        list_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        file_listbox.bind("<<ListboxSelect>>", lambda event: self.load_config_file(event, settings_window))
+        
+        for file in self.config_files:
+            file_listbox.insert(tk.END, file)
+        
+        self.config_frame = tk.Frame(settings_window)
+        self.config_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+
+    def load_config_file(self, event, settings_window):
+        selected_index = event.widget.curselection()
+        if not selected_index:
+            return
+        selected_file = event.widget.get(selected_index)
+        file_path = os.path.join(self.config_path, selected_file)
+        self.display_config_values(file_path, settings_window)
+
+    def display_config_values(self, file_path, settings_window):
+        for widget in self.config_frame.winfo_children():
+            widget.destroy()
+        
+        parser = configparser.ConfigParser()
+        parser.read(file_path)
+
+        canvas = tk.Canvas(self.config_frame)
+        scrollbar = tk.Scrollbar(self.config_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        row = 0
+        for section in parser.sections():
+            tk.Label(scrollable_frame, text=f"[{section}]", font=("Arial", 10, "bold")).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            row += 1
+            for key, value in parser.items(section):
+                tk.Label(scrollable_frame, text=key).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+                entry = tk.Entry(scrollable_frame)
+                entry.insert(0, value)
+                entry.grid(row=row, column=1, sticky="w", padx=5, pady=2)
+                row += 1
+
+        button_frame = tk.Frame(self.config_frame)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
+        
+        save_button = tk.Button(button_frame, text="Kaydet", command=lambda: self.save_config(file_path, scrollable_frame))
+        save_button.pack(side=tk.RIGHT, padx=5)
+        
+        cancel_button = tk.Button(button_frame, text="Vazgeç", command=settings_window.destroy)
+        cancel_button.pack(side=tk.RIGHT, padx=5)
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    
+    def save_config(self, file_path, scrollable_frame):
+        parser = configparser.ConfigParser()
+        parser.read(file_path)
+
+        row = 0
+        for section in parser.sections():
+            row += 1
+            for key in parser[section]:
+                entry = scrollable_frame.grid_slaves(row=row, column=1)[0]  # Entry nesnesini al
+                parser[section][key] = entry.get()
+                row += 1
+        
+        with open(file_path, 'w') as configfile:
+            parser.write(configfile)
+
+        print(f"{file_path} başarıyla kaydedildi!")
+
 
     def copy_selected_text(self, event):
         try:
