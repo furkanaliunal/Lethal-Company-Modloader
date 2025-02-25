@@ -601,7 +601,9 @@ class App(tk.Tk):
             self.write_to_text_area_from_async(MSG["modloader_uptodate"], "gray")
 
 
-    def check_for_modpack_updates(sef):
+    def check_for_modpack_updates(self):
+
+        os.chdir(self.game_path)
 
         # local commit
         local_commit_hash = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, creationflags=CREATION_FLAGS)
@@ -619,10 +621,7 @@ class App(tk.Tk):
         if local_commit_hash is None or remote_commit_hash is None:
             return False
         
-        if local_commit_hash != remote_commit_hash:
-            return True
-        else:
-            return False
+        return local_commit_hash != remote_commit_hash
 
 
 
