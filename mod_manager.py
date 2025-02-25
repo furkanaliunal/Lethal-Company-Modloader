@@ -12,6 +12,29 @@ import threading
 import time
 import sys
 import configparser
+
+
+CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
+def check_git():
+    try:
+        subprocess.run(["git", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, creationflags=CREATION_FLAGS)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+def install_git():
+    process = subprocess.Popen(
+        'cmd.exe /c start /wait cmd.exe /c "winget install --id Git.Git -e --source winget"',
+        shell=False
+    )
+    process.wait()
+
+if not check_git():
+    install_git()
+
+os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = r"C:\\Program Files\\Git\bin\\git.exe"
+
 import git
 
 
@@ -170,21 +193,6 @@ def get_system_language():
     return lang
 
 
-def check_git():
-    try:
-        subprocess.run(["git", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, creationflags=CREATION_FLAGS)
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-    
-
-def install_git():
-    process = subprocess.Popen(
-        'cmd.exe /c start /wait cmd.exe /c "winget install --id Git.Git -e --source winget"',
-        shell=False
-    )
-    process.wait()
-
 
 def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL):
     if not os.path.exists(os.path.join(game_dir, ".git")):
@@ -235,8 +243,6 @@ def get_resource_path(relative_path):
 LANG = get_system_language()
 MSG = MESSAGES[LANG]
 APP = None
-CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-
 
 
 
@@ -525,6 +531,13 @@ class App(tk.Tk):
             self.write_to_text_area(MSG["git_installation_complete"])
             self.init_variables()
         fetch_origin_and_reset_local_repo(self.game_path)
+        
+        self.config_files = [f for f in os.listdir(self.config_path) if f.endswith(".cfg")]
+        self.external_mods_file = os.path.join(self.game_path, "external_mods.txt")
+        self.installed_mods_file = os.path.join(self.game_path, "installed_mods.txt")
+        self.installed_mods = self.read_installed_mods()
+        self.current_branch = get_git_branch(self.game_path)
+        self.toggle_state = self.current_branch != "nomod"
         self.clean_external_mods()
 
         thread = threading.Thread(target=self.install_external_mods, daemon=True).start()
