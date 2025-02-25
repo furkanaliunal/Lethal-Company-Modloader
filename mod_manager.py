@@ -453,6 +453,7 @@ class App(tk.Tk):
             subprocess.Popen(["start", f"steam://run/{STEAM_APP_ID}"], shell=True, creationflags=CREATION_FLAGS)
         except Exception as e:
             self.write_to_text_area(MSG["game_start_failed"].format(e), "red")
+            self.write_to_text_area(str(e), "red")
 
 
     def update_action(self):
