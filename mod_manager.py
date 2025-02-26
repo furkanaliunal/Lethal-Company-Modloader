@@ -35,8 +35,6 @@ if not check_git():
 
 os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = r"C:\\Program Files\\Git\bin\\git.exe"
 
-import git
-
 
 
 
@@ -45,7 +43,7 @@ import git
 MODPACK_REPOSITORY_URL = "https://github.com/furkanaliunal/Lethal-Company-Modpack.git"
 
 MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
-CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.3/Lethal.Mod.Manager.exe"
+CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.4/Lethal.Mod.Manager.exe"
 UPDATE_CHECK_URL = "https://api.github.com/repos/furkanaliunal/Lethal-Company-Modloader/releases/latest"
 STEAM_APP_ID = "1966720"
 
@@ -197,32 +195,42 @@ def get_system_language():
 def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL):
     if not os.path.exists(os.path.join(game_dir, ".git")):
         APP.write_to_text_area(MSG["git_folder_not_found"])
-        temp_dir = os.path.join(game_dir, "temp")
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
-        repo = git.Repo.clone_from(repo_url, temp_dir)
-        for item in os.listdir(temp_dir):
-            s = os.path.join(temp_dir, item)
-            d = os.path.join(game_dir, item)
-            if os.path.isdir(s):
-                shutil.move(s, d)
-            else:
-                shutil.move(s, d)
-        shutil.rmtree(temp_dir)
+        # temp_dir = os.path.join(game_dir, "temp")
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
+        # repo = git.Repo.clone_from(repo_url, temp_dir)
+        # for item in os.listdir(temp_dir):
+        #     s = os.path.join(temp_dir, item)
+        #     d = os.path.join(game_dir, item)
+        #     if os.path.isdir(s):
+        #         shutil.move(s, d)
+        #     else:
+        #         shutil.move(s, d)
+        # shutil.rmtree(temp_dir)
+        subprocess.run(["git", "clone", repo_url, "."], shell=False, creationflags=CREATION_FLAGS)
         APP.init_variables()
     else:
         APP.write_to_text_area(MSG["git_fetching_updates"])
-        repo = git.Repo(game_dir)
-        origin = repo.remotes.origin
-        origin.fetch()
-        repo.head.reset('origin/main', index=True, working_tree=True)
+        # repo = git.Repo(game_dir)
+        # origin = repo.remotes.origin
+        # origin.fetch()
+        # repo.head.reset('origin/main', index=True, working_tree=True)
+        subprocess.run(["git", "fetch", "origin"], shell=False, creationflags=CREATION_FLAGS)
+        subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
     APP.write_to_text_area(MSG["git_cleaning_files"])
-    repo.git.clean('-fd')
+    # repo.git.clean('-fd')
+    subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
     APP.write_to_text_area(MSG["git_update_completed"])
 
 def get_git_branch(game_dir):
-    repo = git.Repo(game_dir)
-    return repo.active_branch.name
+    # repo = git.Repo(game_dir)
+    # return repo.active_branch.name
+    try:
+        branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], 
+                                         stderr=subprocess.DEVNULL).decode().strip()
+        return branch
+    except Exception:
+        return None
 
 def extract_zip(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -350,17 +358,25 @@ class App(tk.Tk):
             self.write_to_text_area(MSG["mod_start_install"])
 
     def toggle_button_action(self):
-        repo = git.Repo(self.game_path)
+        # repo = git.Repo(self.game_path)
         self.toggle_state = not self.toggle_state
         self.toggle_button.config(state="disabled")
         if self.toggle_state:
             self.toggle_button.config(image=self.open_photo)
             self.write_to_text_area(MSG["mod_pack_activated"], "green")
-            repo.git.checkout("main")
+            # repo.git.checkout("main")
+            
+            subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
+            subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
+            subprocess.run(["git", "checkout", "main"], shell=False, creationflags=CREATION_FLAGS)
         else:
             self.toggle_button.config(image=self.closed_photo)
             self.write_to_text_area(MSG["mod_pack_deactivated"], "red")
-            repo.git.checkout("nomod")
+            # repo.git.checkout("nomod")
+            
+            subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
+            subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
+            subprocess.run(["git", "checkout", "nomod"], shell=False, creationflags=CREATION_FLAGS)
         self.toggle_button.config(state="active")
 
     def open_game_folder(self):
