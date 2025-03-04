@@ -43,7 +43,7 @@ os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = r"C:\\Program Files\\Git\bin\\git.exe"
 MODPACK_REPOSITORY_URL = "https://github.com/furkanaliunal/Lethal-Company-Modpack.git"
 
 MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
-CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.4_HotFix/Lethal.Mod.Manager.exe"
+CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.4_HotFix2/Lethal.Mod.Manager.exe"
 UPDATE_CHECK_URL = "https://api.github.com/repos/furkanaliunal/Lethal-Company-Modloader/releases/latest"
 STEAM_APP_ID = "1966720"
 
