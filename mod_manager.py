@@ -195,34 +195,41 @@ def get_system_language():
 def fetch_origin_and_reset_local_repo(game_dir, repo_url=MODPACK_REPOSITORY_URL):
     if not os.path.exists(os.path.join(game_dir, ".git")):
         APP.write_to_text_area(MSG["git_folder_not_found"])
-        # temp_dir = os.path.join(game_dir, "temp")
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
-        # repo = git.Repo.clone_from(repo_url, temp_dir)
-        # for item in os.listdir(temp_dir):
-        #     s = os.path.join(temp_dir, item)
-        #     d = os.path.join(game_dir, item)
-        #     if os.path.isdir(s):
-        #         shutil.move(s, d)
-        #     else:
-        #         shutil.move(s, d)
-        # shutil.rmtree(temp_dir)
-        subprocess.run(["git", "clone", repo_url, "."], shell=False, creationflags=CREATION_FLAGS)
+        temp_dir = os.path.join(game_dir, "temp")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+        subprocess.run(["git", "clone", repo_url, temp_dir], shell=False, creationflags=CREATION_FLAGS)
+        for item in os.listdir(temp_dir):
+            s = os.path.join(temp_dir, item)
+            d = os.path.join(game_dir, item)
+            if os.path.isdir(s):
+                shutil.move(s, d)
+            else:
+                shutil.move(s, d)
+        shutil.rmtree(temp_dir)
         APP.init_variables()
     else:
         APP.write_to_text_area(MSG["git_fetching_updates"])
+        prev_dir = os.getcwd()
+        os.chdir(game_dir)
+        try:
         # repo = git.Repo(game_dir)
         # origin = repo.remotes.origin
         # origin.fetch()
         # repo.head.reset('origin/main', index=True, working_tree=True)
-        subprocess.run(["git", "fetch", "origin"], shell=False, creationflags=CREATION_FLAGS)
-        subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
+            subprocess.run(["git", "fetch", "origin"], shell=False, creationflags=CREATION_FLAGS)
+            subprocess.run(["git", "reset", "--hard", "origin/main"], shell=False, creationflags=CREATION_FLAGS)
+        finally:
+            os.chdir(prev_dir)
+
     APP.write_to_text_area(MSG["git_cleaning_files"])
     # repo.git.clean('-fd')
     subprocess.run(["git", "clean", "-fd"], shell=False, creationflags=CREATION_FLAGS)
     APP.write_to_text_area(MSG["git_update_completed"])
 
 def get_git_branch(game_dir):
+    prev_dir = os.getcwd()
+    os.chdir(game_dir)
     # repo = git.Repo(game_dir)
     # return repo.active_branch.name
     try:
@@ -231,6 +238,8 @@ def get_git_branch(game_dir):
         return branch
     except Exception:
         return None
+    finally:
+        os.chdir(prev_dir)
 
 def extract_zip(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
