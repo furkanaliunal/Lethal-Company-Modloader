@@ -6,7 +6,7 @@ import subprocess
 import winreg
 import locale
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
+from tkinter import scrolledtext, messagebox, filedialog
 from PIL import Image, ImageTk
 import threading
 import time
@@ -90,6 +90,11 @@ MESSAGES = {
         "settings" : "Ayarlar",
         "save" : "Kaydet",
         "cancel" : "Vazgeç",
+        "select_game_manual_prompt": "Oyun dizini bulunamadı. Lütfen manuel olarak seçin.",
+        "select_game_folder_dialog_title": "Oyun Klasörünü Seçin",
+        "invalid_directory_selected": "Seçilen klasörde '{}' bulunamadı.",
+        "game_path_saved_success": "Oyun dizini başarıyla kaydedildi.",
+        "game_path_save_error": "Registry kaydedilirken bir hata oluştu:\n{}",
 
     },
     "en": {
@@ -132,6 +137,11 @@ MESSAGES = {
         "settings" : "Settings",
         "save" : "Save",
         "cancel" : "Cancel",
+        "select_game_manual_prompt": "Game directory not found. Please select it manually.",
+        "select_game_folder_dialog_title": "Select Game Folder",
+        "invalid_directory_selected": "'{}' not found in the selected folder.",
+        "game_path_saved_success": "Game path successfully saved.",
+        "game_path_save_error": "An error occurred while saving to registry:\n{}",
 
     },
     "nl": {
@@ -174,6 +184,11 @@ MESSAGES = {
         "settings" : "Instellingen",
         "save" : "Opslaan",
         "cancel" : "Annuleren",
+        "select_game_manual_prompt": "Spelmap niet gevonden. Selecteer deze handmatig.",
+        "select_game_folder_dialog_title": "Selecteer Spelmap",
+        "invalid_directory_selected": "'{}' niet gevonden in de geselecteerde map.",
+        "game_path_saved_success": "Spelpad succesvol opgeslagen.",
+        "game_path_save_error": "Er is een fout opgetreden bij het opslaan in het register:\n{}",
 
     }
 }
@@ -274,7 +289,12 @@ class App(tk.Tk):
         self.build_gui()
 
     def init_variables(self):
-        self.game_path, self.game_exe_path = self.find_game_directory(with_exe_path=True)
+        try:
+            self.game_path, self.game_exe_path = self.find_game_directory(with_exe_path=True)
+        except TypeError:
+            self.select_game_directory()
+            self.game_path, self.game_exe_path = self.find_game_directory(with_exe_path=True)
+        
         if self.game_path is not None:
             self.is_git_installed = check_git()
             self.is_repository_installed = os.path.exists(os.path.join(self.game_path, ".git"))
@@ -568,22 +588,49 @@ class App(tk.Tk):
         thread = threading.Thread(target=self.install_external_mods, daemon=True).start()
 
 
+    def select_game_directory(self):
+        messagebox.showinfo(MSG["app_title"], MSG["select_game_manual_prompt"])
+        
+        selected_dir = filedialog.askdirectory(title=MSG["select_game_folder_dialog_title"])
+        exe_name = "Lethal Company.exe"
+        exe_path = os.path.join(selected_dir, exe_name)
+
+        if not os.path.exists(exe_path):
+            messagebox.showerror(MSG["app_title"], MSG["invalid_directory_selected"].format(exe_name))
+            self.select_game_directory()
+            return
+
+        try:
+            reg_path = r"System\GameConfigStore\Children\FurkiLethalCompany"
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path) as key:
+                winreg.SetValueEx(key, "ExeParentDirectory", 0, winreg.REG_SZ, selected_dir)
+                winreg.SetValueEx(key, "MatchedExeFullPath", 0, winreg.REG_SZ, exe_path)
+            messagebox.showinfo(MSG["app_title"], MSG["game_path_saved_success"])
+            return True
+        except Exception as e:
+            messagebox.showerror(MSG["app_title"], MSG["game_path_save_error"].format(e))
+            return False
+
+
 
     def find_game_directory(self, with_exe_path = False, search_value = "Lethal Company"):
-        reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "System\\GameConfigStore\\Children")
-        for i in range(0, winreg.QueryInfoKey(reg_key)[0]):
-            subkey_name = winreg.EnumKey(reg_key, i)
-            subkey = winreg.OpenKey(reg_key, subkey_name)
-            try:
-                exe_parent_dir = winreg.QueryValueEx(subkey, "ExeParentDirectory")[0]
-                if "Lethal Company".lower() in exe_parent_dir.lower():
-                    matched_exe_full_path = winreg.QueryValueEx(subkey, "MatchedExeFullPath")[0]
-                    if with_exe_path:
-                        return os.path.dirname(matched_exe_full_path), matched_exe_full_path
-                    return os.path.dirname(matched_exe_full_path)
-            except FileNotFoundError:
-                continue
-        return None
+        try:
+            reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'System\GameConfigStore\Children')
+            for i in range(0, winreg.QueryInfoKey(reg_key)[0]):
+                subkey_name = winreg.EnumKey(reg_key, i)
+                subkey = winreg.OpenKey(reg_key, subkey_name)
+                try:
+                    exe_parent_dir = winreg.QueryValueEx(subkey, "ExeParentDirectory")[0]
+                    if "Lethal Company".lower() in exe_parent_dir.lower():
+                        matched_exe_full_path = winreg.QueryValueEx(subkey, "MatchedExeFullPath")[0]
+                        if with_exe_path:
+                            return os.path.dirname(matched_exe_full_path), matched_exe_full_path
+                        return os.path.dirname(matched_exe_full_path)
+                except FileNotFoundError:
+                    continue
+            return None
+        except FileNotFoundError:
+            return None
 
 
 
