@@ -22,7 +22,7 @@ CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 MODPACK_REPOSITORY_URL = "https://github.com/furkanaliunal/Lethal-Company-Modpack.git"
 
 MODLOADER_REPOSITORY_URL = "https://github.com/furkanaliunal/lethal-company-modloader.git"
-CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.4_HotFix2/Lethal.Mod.Manager.exe"
+CURRENT_VERSION_URL = "https://github.com/furkanaliunal/Lethal-Company-Modloader/releases/download/Release-0.5.1/Lethal.Mod.Manager.exe"
 UPDATE_CHECK_URL = "https://api.github.com/repos/furkanaliunal/Lethal-Company-Modloader/releases/latest"
 STEAM_APP_ID = "1966720"
 
