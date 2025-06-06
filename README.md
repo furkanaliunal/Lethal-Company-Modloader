@@ -79,8 +79,6 @@ Once a mod is downloaded, the script records the version. If a newer version is 
 </h3>
 
 🎃 Known Issues
-Enable/Disable Mods button malfunction:
-The toggle functionality for enabling or disabling mods does not always update the mod status correctly. This may lead to mods not being applied or removed as expected. Investigation is ongoing.
 
 Antivirus false positives:
 Some antivirus programs may flag the application as suspicious or harmful. This is a false positive likely caused by the use of PyInstaller for packaging. We're working on code-signing the executable to reduce these alerts.
