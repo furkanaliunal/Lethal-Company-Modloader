@@ -16,27 +16,6 @@ import configparser
 
 CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
-def check_git():
-    try:
-        subprocess.run(["git", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, creationflags=CREATION_FLAGS)
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-
-def install_git():
-    process = subprocess.Popen(
-        'cmd.exe /c start /wait cmd.exe /c "winget install --id Git.Git -e --source winget"',
-        shell=False
-    )
-    process.wait()
-
-if not check_git():
-    install_git()
-
-os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = r"C:\\Program Files\\Git\bin\\git.exe"
-
-
-
 
 # region CONFIG
 
@@ -95,6 +74,7 @@ MESSAGES = {
         "invalid_directory_selected": "Seçilen klasörde '{}' bulunamadı.",
         "game_path_saved_success": "Oyun dizini başarıyla kaydedildi.",
         "game_path_save_error": "Registry kaydedilirken bir hata oluştu:\n{}",
+        "git_restart_required": "Git başarıyla yüklendi.\nUygulamayı yeniden başlatın.",
 
     },
     "en": {
@@ -142,6 +122,8 @@ MESSAGES = {
         "invalid_directory_selected": "'{}' not found in the selected folder.",
         "game_path_saved_success": "Game path successfully saved.",
         "game_path_save_error": "An error occurred while saving to registry:\n{}",
+        "git_restart_required": "Git installed successfully.\nPlease restart the application.",
+
 
     },
     "nl": {
@@ -189,10 +171,11 @@ MESSAGES = {
         "invalid_directory_selected": "'{}' niet gevonden in de geselecteerde map.",
         "game_path_saved_success": "Spelpad succesvol opgeslagen.",
         "game_path_save_error": "Er is een fout opgetreden bij het opslaan in het register:\n{}",
+        "git_restart_required": "Git is succesvol geïnstalleerd.\nHerstart de applicatie.",
+
 
     }
 }
-
 
 
 # region UTILITIES
@@ -276,6 +259,42 @@ LANG = get_system_language()
 MSG = MESSAGES[LANG]
 APP = None
 
+
+def check_git():
+    try:
+        result = subprocess.run(["git", "--version"], capture_output=True, text=True, check=True)
+        return True
+    except FileNotFoundError:
+        return False
+    except subprocess.CalledProcessError as e:
+        return False
+
+def install_git():
+    winget_path = shutil.which("winget")
+    if not winget_path:
+        return False
+    try:
+        process = subprocess.run(
+            ["winget", "install", "--id", "Git.Git", "-e", "--source", "winget"],
+            check=True
+        )
+        return True
+    except subprocess.CalledProcessError as e:
+        return False
+
+def ensure_git_installed():
+    if not check_git():
+        success = install_git()
+        messagebox.showinfo("GIT", MSG["git_restart_required"])
+        os._exit(0)
+        if success:
+            return check_git()
+        else:
+            return False
+    return True
+
+ensure_git_installed()
+os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = r"C:\\Program Files\\Git\bin\\git.exe"
 
 
 # region APPLICATION

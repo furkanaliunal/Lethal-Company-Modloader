@@ -84,5 +84,3 @@ The toggle functionality for enabling or disabling mods does not always update t
 
 Antivirus false positives:
 Some antivirus programs may flag the application as suspicious or harmful. This is a false positive likely caused by the use of PyInstaller for packaging. We're working on code-signing the executable to reduce these alerts.
-
-Automatic GIT installation
