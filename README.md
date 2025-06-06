@@ -77,3 +77,13 @@ Once a mod is downloaded, the script records the version. If a newer version is 
 
 
 </h3>
+
+🎃 Known Issues
+Game path detection failure on some systems:
+On certain installations, the automatic game path detection may fail due to missing or corrupted registry entries. A manual path selection option is recommended in such cases.
+
+Enable/Disable Mods button malfunction:
+The toggle functionality for enabling or disabling mods does not always update the mod status correctly. This may lead to mods not being applied or removed as expected. Investigation is ongoing.
+
+Antivirus false positives:
+Some antivirus programs may flag the application as suspicious or harmful. This is a false positive likely caused by the use of PyInstaller for packaging. We're working on code-signing the executable to reduce these alerts.
